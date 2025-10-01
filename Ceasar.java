@@ -1,13 +1,10 @@
-// import com.sun.deploy.util.ArrayUtil;
-
-import java.util.Arrays;
-
-/**
- * Week 3 Program, Cipher manipulation
+/**!
+ * Ceasar Cipher manipulation
  * Purpose: Generate a cipher based on a key utilizing shifting techniques
- * @Author: Jesse Hassell
+ * @Author: Xinthral
  * Date: 9/18/18
  */
+import java.util.Arrays;
 
 public class Ceasar {
   // CLASS SCOPE VARIABLES
@@ -19,7 +16,7 @@ public class Ceasar {
 
   // CLASS METHODS
   private int getIndex(char letter){
-    /**
+    /**!
      * Locates the index of the given letter in the alphabet
      * @param letter: The letter in which you wish to locate the index of
      * @return Integer representing the index of the given letter.
@@ -34,7 +31,7 @@ public class Ceasar {
     return indexNumber;
   }
   private void generateCipherMatrix(char code){
-    /**
+    /**!
      * Generates the Matrix with a given starting position
      * @param code : The first letter that the matrix starts at.
      */
@@ -51,7 +48,7 @@ public class Ceasar {
   }
 
   String encode(String inputText){
-    /**
+    /**!
      * Takes in a string to be encoded with the ciphered matrix
      * @param inputText: Given string you wish to be encoded.
      * @return The cipher encoded string.
@@ -67,16 +64,14 @@ public class Ceasar {
         int secondIndex = getIndex(inputArray[i]);
         outputString += outputMatrix[firstIndex][secondIndex];
         shadowMatrix[firstIndex][secondIndex] = inputArray[i];
-      } else {
-        outputString += " ";
-      }
+      } else { outputString += " "; }
       keyIndex = (keyIndex + 1) % keyArray.length;
     }
     return outputString;
   }
 
   String decode(String inputText){
-    /**
+    /**!
      * Takes in a string to be decoded with the ciphered matrix
      * @param inputText: Given string you wish to be decoded.
      * @return The cipher decoded string.
@@ -93,9 +88,7 @@ public class Ceasar {
             outputString += letters[j];
           }
         }
-      } else {
-        outputString += " ";
-      }
+      } else { outputString += " "; }
       keyIndex = (keyIndex + 1) % keyArray.length;
     }
     return outputString;
@@ -108,7 +101,6 @@ public class Ceasar {
      *              ** WARNING ** - If true, can only be ran after a message
      *              has been decoded.
      */
-
     String[] matrixString = new String[outputMatrix.length];
     String[] shadowString = new String[outputMatrix.length];
     String header = "[ ]  ";
@@ -137,7 +129,7 @@ public class Ceasar {
   }
 
   public Ceasar(char code, String key) {
-    /**
+    /**!
      * Constructor method to initialize the ciphered matrix
      * @param code: The starting letter for the matrix.
      * @param key:  A given string that can be used to encrypt
@@ -158,7 +150,6 @@ public class Ceasar {
     Ceasar self = new Ceasar(code, key);
 
     response1 = self.encode(msg);
-
     assert "PHXXF MQYBPKNJ".equals(response1);
     response2 = self.decode(response1);
     assert "HAPPY BIRTHDAY".equals(response2);

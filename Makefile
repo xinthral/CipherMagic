@@ -56,10 +56,12 @@ MODULES := $($(SOURCES))
 
 help:
 	@echo "##################################################################"
-	@echo "Build Information for the Ciphers                                 "
-	@echo "Usage: make \<str:option\>                                        "
-	@echo "  cpp        - Builds the entire project into object files        "
-	@echo "  clean      - Clean up build files                               "
+	@echo "  Build Information for the Ciphers                               "
+	@echo "  Usage: make \<str:option\>                                      "
+	@echo "    cppCeasar  - Builds the cpp version of the Ceasar Cipher      "
+	@echo "    javaCeasar - Builds the java version of the Ceasar Cipher     "
+	@echo "    pyCeasar   - Builds the py version of the Ceasar Cipher       "
+	@echo "    clean      - Clean up build files                             "
 	@echo "##################################################################"
 
 cppCeasar: ceasar.o

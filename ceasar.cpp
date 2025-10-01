@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <algorithm>
 #include <cstring>
+#include <cctype>
+#include <string>
 
 // #define NDEBUG
 #include <cassert>
@@ -35,7 +37,25 @@ public:
   };
 
   char * decode(const char * input) {
-    char * output = (char*)"HAPPY BIRTHDAY";
+    int keyIdx = 0;
+    int inputLength = std::strlen(input);
+    char * temp = new char[inputLength + 1];
+    char * output = new char[inputLength + 1];
+    int outputIdx = 0;
+    for (int i = 0; i < inputLength; i++) {
+      if (std::isalpha(input[i])) {
+        temp = matrix[getIndex(mask[keyIdx])];
+        for (int j = 0; j < std::strlen(temp); j++) {
+          if (temp[j] == input[i]) {
+            output[outputIdx] = letters[j];
+            outputIdx = (outputIdx + 1) % inputLength;
+            break;
+          }
+        }
+      } else { output[outputIdx++] = input[i]; }
+      keyIdx = (keyIdx + 1) % std::strlen(mask);
+    }
+    output[inputLength] = '\0';
     return output;
   }
   
@@ -47,7 +67,7 @@ public:
     int maskLength = std::strlen(mask);
     char * output = new char[inputLength + 1];
     for (int i = 0; i < inputLength; i++) {
-      if (input[i] != ' ') {
+      if (std::isalpha(input[i])) {
         firstIdx = getIndex(mask[keyIdx]);
         secondIdx = getIndex(input[i]);
         output[i] = matrix[firstIdx][secondIdx];
