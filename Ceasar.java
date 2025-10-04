@@ -140,23 +140,20 @@ public class Ceasar {
   }
 
   public static void main(String[] args) {
-    //System.out.print(outputMatrix[V][>]);
     char code = 'H';
     String key = "BABBAGE";
     String msg = "HAPPY BIRTHDAY";
-    String response1;
-    String response2;
-    boolean hidden = false;
+    // boolean hidden = false;
     Ceasar self = new Ceasar(code, key);
-
-    response1 = self.encode(msg);
+    
+    String response1 = self.encode(msg);
     assert "PHXXF MQYBPKNJ".equals(response1);
-    response2 = self.decode(response1);
+    String response2 = self.decode(response1);
     assert "HAPPY BIRTHDAY".equals(response2);
 
     // Optional Method for viewing the cipher matrix based on last item decoded
-    self.displayMatrix(hidden);
-    String output = String.format("Input: %s\nEncrypted: %s\nDecrypted: %s", msg, response1, response2);
+    // self.displayMatrix(false);
+    String output = String.format("Input:     %s\nEncrypted: %s\nDecrypted: %s", msg, response1, response2);
     System.out.println(output);
   }
 }

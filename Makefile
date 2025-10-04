@@ -64,6 +64,8 @@ help:
 	@echo "    clean      - Clean up build files                             "
 	@echo "##################################################################"
 
+all: cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar
+
 cppCeasar: ceasar.o
 	$(CC) $(CFLAGS) $^ -o $@.exe
 	./$@.exe
@@ -72,7 +74,14 @@ javaCeasar: Ceasar.class
 	java Ceasar
 
 pyCeasar:
-	python3 ceasar.py 
+	python3 ceasar.py
+
+rustCeasar:
+	rustc -o ceasar.exe ceasar.rs
+	./ceasar.exe
+
+luaCeasar:
+	lua ceasar.lua
 
 # Dynamically Compile any object files from requested cpp files
 %.o: %.cpp %.h
@@ -90,6 +99,7 @@ clean:
 cleanobjs:
 	$(RRM) *.o
 	$(RRM) *.class
+	$(RRM) *.pdb
 
 # Clean up binary files
 cleanbin:

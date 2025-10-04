@@ -155,8 +155,8 @@ if __name__ == "__main__":
   mask: str = 'BABBAGE'
   mesg: str = 'HAPPY BIRTHDAY'
   c = CeasarCipher(code, mask)
-  c.printMatrix()
-  print(f"Input: {mesg}")
+  # c.printMatrix()
+  print(f"Input:     {mesg}")
   encrypted: str = c.encrypt(mesg)
   decrypted: str = c.decrypt(encrypted)
   print(f"Encrypted: {encrypted}\nDecrypted: {decrypted}")

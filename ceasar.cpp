@@ -186,11 +186,12 @@ int main(int argc, char **argv) {
   const char* response1;
   const char* response2;
   CeasarCipher c = CeasarCipher(code, mask);
-  c.printMatrix();
   response1 = c.encode(mesg);
   assert(std::strcmp(expected, response1) == 0);
   response2 = c.decode(response1);
   assert(std::strcmp(mesg, response2) == 0);
-  printf("Input: %s\n", mesg);
-  printf("Encrypted: %s\nDecrypted: %s", response1, response2);
+
+  // c.printMatrix();
+  printf("Input:     %s\n", mesg);
+  printf("Encrypted: %s\nDecrypted: %s\n", response1, response2);
 }
