@@ -64,7 +64,7 @@ help:
 	@echo "    clean      - Clean up build files                             "
 	@echo "##################################################################"
 
-all: cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar
+all: cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar bashCeasar
 
 cppCeasar: ceasar.o
 	$(CC) $(CFLAGS) $^ -o $@.exe
@@ -108,4 +108,4 @@ cleanobjs:
 cleanbin:
 	$(RM) *.exe
 
-.PHONY: all cpp clean cleanbin cleanobjs cppCeasar javaCeasar pyCeasar
+.PHONY: all clean cleanbin cleanobjs cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar bashCeasar help
