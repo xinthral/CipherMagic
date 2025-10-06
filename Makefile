@@ -83,6 +83,9 @@ rustCeasar:
 luaCeasar:
 	lua ceasar.lua
 
+bashCeasar:
+	bash ceasar.bash
+
 # Dynamically Compile any object files from requested cpp files
 %.o: %.cpp %.h
 	$(CC) $(CXXFLAGS) -o $@ -c $^
