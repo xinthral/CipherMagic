@@ -46,42 +46,65 @@ local function generate_matrix(code)
   return matrix
 end
 
-local function encode(matrix, key, input)
+local function encode(matrix, salt, input)
   local output = {}
-  local key_chars = {key:byte(1, #key)}
-  local key_len = #key_chars
-  local key_index = 1
+  local salt_chars = {salt:byte(1, #salt)}
+  local salt_len = #salt_chars
+  local salt_index = 1
 
   for c in input:gmatch(".") do
     if c ~= " " then
-      local row = matrix[get_index(string.char(key_chars[key_index]))]
+      local row = matrix[get_index(string.char(salt_chars[salt_index]))]
       local col = get_index(c)
       table.insert(output, string.sub(row, col, col))
-      key_index = (key_index % key_len) + 1
     else
       table.insert(output, " ")
     end
+    salt_index = (salt_index % salt_len) + 1
   end
   return table.concat(output)
 end
 
-function decode(matrix, key, input)
-  return "HAPPY BIRTHDAY"
+function decode(matrix, salt, input)
+  -- local output = "HAPPY BIRTHDAY"
+  local output = {}
+  local salt_chars = {salt:byte(1, #salt)}
+  local salt_len = #salt_chars
+  local salt_index = 1
+  local letters = get_letters()
+  
+  for c in input:gmatch(".") do
+    if c ~= " " then
+      local row = matrix[get_index(string.char(salt_chars[salt_index]))]
+      for j = 1, #row do
+        local choice = string.sub(row, j, j)
+        if choice == c then
+          local letter = string.sub(letters, j, j)
+          table.insert(output, letter)
+          break
+        end
+      end
+    else
+      table.insert(output, ' ')
+    end
+    salt_index = (salt_index % salt_len) + 1
+  end
+  return table.concat(output)
 end
 
 -- Main Usage
 local code   = 'H'
-local key    = "BABBAGE"
+local salt   = "BABBAGE"
 local msg    = "HAPPY BIRTHDAY"
 
 -- Build the cipher matrix
 local matrix = generate_matrix(code)
 
 -- Encrypt
-local encrypted = encode(matrix, key, msg)
+local encrypted = encode(matrix, salt, msg)
 
 -- Decrypt
-local decrypted = decode(matrix, key, encrypted)
+local decrypted = decode(matrix, salt, encrypted)
 
 -- Show matrix
 -- display_matrix(matrix)
