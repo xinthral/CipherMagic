@@ -113,7 +113,7 @@ local encrypted = encode(matrix, salt, msg)
 local decrypted = decode(matrix, salt, encrypted)
 
 -- Show matrix
-display_matrix(matrix)
+-- display_matrix(matrix)
 
 -- Print results
 print("Input:     " .. msg)

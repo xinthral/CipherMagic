@@ -163,7 +163,7 @@ else
   mapfile -t MATRIX < <(generate_matrix "${CODE^^}")
   encrypted="$(get_encrypted "$MESG" "${MATRIX[@]}")"
   decrypted="$(get_decrypted "${encrypted^^}" "${MATRIX[@]}")"
-  display_matrix "${MATRIX[@]}"
+  # display_matrix "${MATRIX[@]}"
   printf "Input:     %s\n" "$MESG"
   printf "Encrypted: %s\n" "$encrypted"
   printf "Decrypted: %s\n" "$decrypted"
