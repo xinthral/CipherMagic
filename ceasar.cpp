@@ -40,6 +40,23 @@ public:
       matrix = generateMatrix(code);
   };
 
+  /**!
+   * @brief Decrypts a message that was encrypted using the Caesar/Vigenère-style matrix.
+   *
+   * The decode function takes an encrypted string and reverses the encryption using the
+   * same 2D matrix and SALT string used for encoding. For each character, it finds the
+   * corresponding row determined by the current SALT character, searches that row for
+   * the encrypted character, and maps it back to the original alphabet letter. Non-
+   * alphabetic characters are preserved as-is. The SALT cycles through for each letter.
+   *
+   * @param input The encrypted message to be decrypted.
+   * @return A newly allocated char array containing the decrypted message. Caller is
+   *         responsible for deleting the returned array to avoid memory leaks.
+   *
+   * @note Each letter of the encrypted message is expected to match the matrix encoding.
+   *       Spaces and punctuation are preserved unchanged. The decryption relies on
+   *       the same initial code character and SALT used during encryption.
+   */
   char * decode(const char * input) {
     int keyIdx = 0;
     int inputLength = std::strlen(input);
@@ -63,6 +80,22 @@ public:
     return output;
   }
   
+  /**!
+   * @brief Encrypts a message using the Caesar/Vigenère-style matrix and SALT.
+   *
+   * The encode function takes an input string and encrypts it using the pre-generated
+   * 2D matrix. Each character is substituted based on its corresponding row determined
+   * by the current character in the SALT string. Non-alphabetic characters are
+   * preserved as-is. The SALT cycles through for each letter of the message.
+   *
+   * @param input The plaintext message to be encrypted.
+   * @return A newly allocated char array containing the encrypted message. Caller is
+   *         responsible for deleting the returned array to avoid memory leaks.
+   *
+   * @note Each letter of the input message is converted to uppercase before encryption.
+   *       Spaces and punctuation are preserved unchanged. The encryption is dependent
+   *       on both the initial code character and the SALT string.
+   */
   char * encode(const char * input) {
     int keyIdx = 0;
     int firstIdx = 0;
