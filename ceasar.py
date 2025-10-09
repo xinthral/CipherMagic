@@ -1,3 +1,8 @@
+'''
+  The Ceasar Cipher is a simple rotational cryptographic algorithm.
+  However, it is enhanced with the additions of Vigenère modifications.
+'''
+
 class CeasarCipher:
   def __init__(self, shift: str, mask: str) -> None:
       """

@@ -1,9 +1,8 @@
 /**!
- * Ceasar Cipher manipulation
- * Purpose: Generate a cipher based on a key utilizing shifting techniques
- * @Author: Xinthral
- * Date: 9/18/18
- */
+  The Ceasar Cipher is a simple rotational cryptographic algorithm. 
+  However, it is enhanced with the additions of Vigenère modifications.
+  Originated: 9/18/18
+*/
 import java.util.Arrays;
 
 public class Ceasar {

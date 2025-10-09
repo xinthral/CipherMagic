@@ -1,5 +1,11 @@
 #!/usr/bin/env lua
 
+--[[
+  The Ceasar Cipher is a simple rotational cryptographic algorithm.
+  However, it is enhanced with the additions of Vigenère modifications.
+]]
+
+
 local function get_letters()
   return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 end
@@ -107,7 +113,7 @@ local encrypted = encode(matrix, salt, msg)
 local decrypted = decode(matrix, salt, encrypted)
 
 -- Show matrix
--- display_matrix(matrix)
+display_matrix(matrix)
 
 -- Print results
 print("Input:     " .. msg)
