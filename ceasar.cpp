@@ -162,7 +162,7 @@ public:
   int getIndex(const char code) {
     const char* pos = std::strchr(letters, code);
     if (!pos) {
-      printf("%d: %c - Not found.\n", pos, code);
+      printf("%s: %c - Not found.\n", pos, code);
       return -1;
     }
     return int(pos - letters);

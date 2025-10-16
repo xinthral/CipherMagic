@@ -7,17 +7,21 @@
 
 # Compiler: gcc for C programs, g++ for C++ programs
 # emcc for embedded C programs, em++ for embedded C++ programs
-CC := g++
+CC := gcc
+PP := g++
 DOXYGEN := doxygen
 RRM := rm -rf
 SEPR := /
+NASM := nasm
 
 # Windows Variants
 ifeq ($(OS), Windows_NT)
-CC := c++
+CC := cc
+PP := c++
 DOXYGEN := doxygen.exe
 RM := del
 RRM := del /S /Q /f
+NASM := "C:\\Users\\PC\\Applications\\Perl\\c\\bin\\nasm.exe"
 SEPR := \\
 
 endif
@@ -67,7 +71,7 @@ help:
 all: cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar bashCeasar
 
 cppCeasar: ceasar.o
-	$(CC) $(CFLAGS) $^ -o $@.exe
+	$(PP) $(CFLAGS) $^ -o $@.exe
 	./$@.exe
 
 javaCeasar: Ceasar.class
@@ -86,9 +90,17 @@ luaCeasar:
 bashCeasar:
 	bash ceasar.bash
 
+asmCeasar: ceasar.o
+	/usr/bin/ld -o ceasar.exe $^
+	./ceasar.exe
+
+# Link up Assembly Objects
+ceasar.o: ceasar.asm
+	$(NASM) -f elf64 -g -F dwarf -o $@ $<
+
 # Dynamically Compile any object files from requested cpp files
 %.o: %.cpp %.h
-	$(CC) $(CXXFLAGS) -o $@ -c $^
+	$(PP) $(CXXFLAGS) -o $@ -c $^
 
 %.class: %.java
 	javac $<
@@ -101,6 +113,7 @@ clean:
 # Clean up audiosuite and graph data
 cleanobjs:
 	$(RRM) *.o
+	$(RRM) *.obj
 	$(RRM) *.class
 	$(RRM) *.pdb
 
