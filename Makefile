@@ -62,13 +62,24 @@ help:
 	@echo "##################################################################"
 	@echo "  Build Information for the Ciphers                               "
 	@echo "  Usage: make \<str:option\>                                      "
-	@echo "    cppCeasar  - Builds the cpp version of the Ceasar Cipher      "
-	@echo "    javaCeasar - Builds the java version of the Ceasar Cipher     "
-	@echo "    pyCeasar   - Builds the py version of the Ceasar Cipher       "
+	@echo "    asmCeasar  - Builds the assembly version of the Cipher        "
+	@echo "    bashCeasar - Builds the bash version of the Cipher            "
+	@echo "    cppCeasar  - Builds the cpp version of the Cipher             "
+	@echo "    javaCeasar - Builds the java version of the Cipher            "
+	@echo "    luaCeasar  - Builds the lua version of the Cipher             "
+	@echo "    pyCeasar   - Builds the py version of the Cipher              "
+	@echo "    rustCeasar - Builds the rust version of the Cipher            "
 	@echo "    clean      - Clean up build files                             "
 	@echo "##################################################################"
 
-all: cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar bashCeasar
+all: 
+	$(MAKE) asmCeasar
+	$(MAKE) bashCeasar
+	$(MAKE) cppCeasar
+	$(MAKE) javaCeasar
+	$(MAKE) luaCeasar
+	$(MAKE) rustCeasar
+	$(MAKE) pyCeasar
 
 cppCeasar: ceasar.o
 	$(PP) $(CFLAGS) $^ -o $@.exe
@@ -81,8 +92,8 @@ pyCeasar:
 	python3 ceasar.py
 
 rustCeasar:
-	rustc -o ceasar.exe ceasar.rs
-	./ceasar.exe
+	rustc -o $@.exe ceasar.rs
+	./$@.exe
 
 luaCeasar:
 	lua ceasar.lua
@@ -90,12 +101,12 @@ luaCeasar:
 bashCeasar:
 	bash ceasar.bash
 
-asmCeasar: ceasar.o
-	/usr/bin/ld -o ceasar.exe $^
-	./ceasar.exe
+asmCeasar: ceasar.obj
+	/usr/bin/ld -o $@.exe $^
+	./$@.exe
 
 # Link up Assembly Objects
-ceasar.o: ceasar.asm
+%.obj: %.asm
 	$(NASM) -f elf64 -g -F dwarf -o $@ $<
 
 # Dynamically Compile any object files from requested cpp files
