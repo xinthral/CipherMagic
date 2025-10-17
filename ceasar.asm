@@ -46,14 +46,14 @@ _start:                                                             ; tells link
             LOOP .copy_hash                                         ; loop through all of the source, decrements ECX
 
             ; Display Input Message
-            MOV RSI, idxHead
-            MOV RDX, idxHLen
+            MOV RSI, idxHead                                        ; set source index to header message
+            MOV RDX, idxHLen                                        ; set size to index length
             MOV RAX, SYS_WRITE                                      ; system call number (system_write)
             MOV RDI, STDOUT                                         ; file descriptor (stdout)
             SYSCALL                                                 ; kernel syscall
 
             MOV RSI, message                                        ; set source index to message
-            MOV RDX, lenMesg                                        ; set size to message
+            MOV RDX, lenMesg                                        ; set size to message length
             MOV RAX, SYS_WRITE                                      ; system call number (system_write)
             MOV RDI, STDOUT                                         ; file descriptor (stdout)
             SYSCALL                                                 ; kernel syscall
@@ -62,7 +62,7 @@ _start:                                                             ; tells link
             SUB RSP, 8                                              ; create 8 byte space (must be 16byte aligned)
             MOV byte [RSP], 0xA                                     ; assign newline character to rsp
             MOV RSI, RSP                                            ; assign new stack pointer to source index
-            MOV RDX, 1                                              ; set size of bytes in newline
+            MOV RDX, 1                                              ; set size to size of newline char
             MOV RAX, SYS_WRITE                                      ; system call number (system_write)
             MOV RDI, STDOUT                                         ; file descriptor (stdout)
             SYSCALL                                                 ; kernel syscall
