@@ -102,7 +102,7 @@ bashCeasar:
 	bash ceasar.bash
 
 asmCeasar: ceasar.obj
-	/usr/bin/ld -o $@.exe $^
+	/usr/bin/ld -g -o $@.exe $^
 	./$@.exe
 
 # Link up Assembly Objects

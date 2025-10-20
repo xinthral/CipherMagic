@@ -1,16 +1,22 @@
-;-----------------------------------------------------------------------------------------
-;  The Ceasar Cipher is a simple rotational cryptographic algorithm. 
-;  However, it is enhanced with the additions of Vigenère modifications.
-;  Assemble and run with:
+;-------------------------------------------------------------------;
+; The Ceasar Cipher is a simple rotational cryptographic algorithm. 
+; However, it is enhanced with the additions of Vigenère modifications.
+; Author:
+;   Xinthral
 ;
-;         nasm -felf64 ceasar.asm -o ceasar.obj
-;         ld ceasar.obj -o ceasar.exe
-;-----------------------------------------------------------------------------------------
+; Assemble and run with:
+;   nasm -felf64 ceasar.asm -o ceasar.obj
+;   ld ceasar.obj -o ceasar.exe
+;
+;-------------------------------------------------------------------;
 SYS_EXIT    equ 60                                                  ; alias for system_exit
 SYS_WRITE   equ 1                                                   ; alias for system_write
 STDIN       equ 0                                                   ; alias for stdin file descriptor
 STDOUT      equ 1                                                   ; alias for stdout file descriptor
 
+;-------------------------------------------------------------------;
+; SECTION [data]: Static Assigned Memory
+;-------------------------------------------------------------------;
             SECTION .data
 codeLetter: DB 'H', 0                                               ; byte to hold the offset code
 hashWord:   DB 'BABBAGE', 0                                         ; string to hold encryption salt
@@ -20,20 +26,21 @@ lenMesg:    equ $ - message                                         ; length of 
 alphabet:   DB 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0                      ; string to hold alphabet
 lenAlpha:   equ $ - alphabet                                        ; length of the alphabet
 idxHead:    DB 'Input:     ', 0                                     ; first formatted output line
-idxHLen:    equ $ - idxHead
+idxHLen:    equ $ - idxHead                                         ; length of the index header
 encHead:    DB 'Encrypted: ', 0                                     ; second formatted output line
-encHLen:    equ $ - encHead
+encHLen:    equ $ - encHead                                         ; length of the encrypted header
 decHead:    DB 'Decrypted: ', 0                                     ; third formatted output line
-decHLen:    equ $ - decHead
+decHLen:    equ $ - decHead                                         ; length of the decrypted header
+maxSize:    equ lenAlpha * lenAlpha                                 ; maximum size for the matrix buffer
 ; tempRow:    TIMES lenAlpha DB 0                                     ; initialize 0 array, len = alphabet
 
+;-------------------------------------------------------------------;
+; SECTION [text]: Instruction Execution Order
+;-------------------------------------------------------------------;
             SECTION .text
             global _start                                           ; must be declared for linker (ld)
 
-
-
-
-_start:                                                             ; tells linker entry point
+_start:
             ; Copy Offset Code into key buffer
             MOV AL, [codeLetter]                                    ; load key into temp register
             MOV [key], AL                                           ; put code into key buffer
@@ -121,6 +128,8 @@ _start:                                                             ; tells link
             SYSCALL                                                 ; kernel syscall
             add RSP, 16                                             ; restore stack
 
+            CALL generate_matrix
+
 ;-------------------------------------------------------------------;
 ; _exit:
 ;   Purpose:
@@ -150,39 +159,74 @@ get_index_of_letter:
             MOV RSI, alphabet                                       ; point to alphabet string
             XOR RCX, RCX                                            ; set index counter = 0
 
-.loop_find:
+.loop_alphabet:
             MOV DL, [RSI + RCX]                                     ; load letter at counter location
             TEST DL, DL                                             ; test for null terminator, ZF=0 means true
-            JZ .not_found                                           ; jump if zero (ZF=0) to .not_found subroutine
+            JZ .no_letter_found                                     ; jump if zero (ZF=0) to .not_found subroutine
             CMP DL, AL                                              ; compare input value with index value, ZF=0 means true
-            JE .found                                               ; jump if equal (ZF=0) to .found subroutine
+            JE .letter_found                                        ; jump if equal (ZF=0) to .found subroutine
             INC RCX                                                 ; increment index counter
-            JMP .loop_find                                          ; continue .loop_find subroutine
+            JMP .loop_alphabet                                      ; continue .loop_find subroutine
 
-.found:
-            MOV RAX, RCX                                            ; return index in RAX
+.letter_found:
+            MOV RAX, RCX                                            ; return index to RAX
             POP RSI                                                 ; restore caller's source index
             RET                                                     ; return to caller
 
-.not_found:
-            XOR RAX, RAX                                            ; reset RAX to 0
+.no_letter_found:
+            XOR RAX, RAX                                            ; clear RAX
             POP RSI                                                 ; restore caller's source index
             RET                                                     ; return to caller
 
 ;-------------------------------------------------------------------;
 ; generate_matrix:
 ;   Purpose:
-;       Create "2d array" of rotated letters.
+;       Create "2d array" of rotated letters, stored as an array in
+;       the matrix buffer.
 ;   Input:
-;       None
+;       AL = character to initiate matrix with
 ;   Output:
 ;       None
 ;-------------------------------------------------------------------;
-; generate_matrix:
-;             PUSH RSI                                                ; save caller's source index
-;             MOV 
+generate_matrix:
+            PUSH RSI                                                ; save caller's source index
+            MOV RSI, alphabet                                       ; load alphabet into source index
+            MOV RDI, matrix                                         ; load matrix into destination index
+            MOV AL, [key]                                           ; load offset key into temp register
+            CALL get_index_of_letter                                ; initiate instruction ( [in]AL , [out]RAX )
+            MOV RCX, RAX                                            ; set index counter = RAX
+            XOR R8, R8                                              ; set destination counter = 0
+            MOV R9, maxSize                                         ; load maxSize into temp register
 
+.loop_matrix:
+            CMP R9, R8                                              ; compare if counter < maxSize
+            JE .loop_matrix_exit                                    ; jump if equal, matrix buffer limit reached
+            MOV DL, [RSI + RCX]                                     ; load letter at counter location
+            TEST DL, DL                                             ; test for null terminator, ZF=0 means true
+            JZ .loop_matrix_wrap                                    ; jump if zero (ZF=0) to .loop_matrix_feed subroutine
+            MOV [RDI + R8], DL                                      ; set matrix[i] to temp char
+            INC R8                                                  ; Incremental loop counter
+            JMP .loop_matrix                                        ; continue .loop_matrix subroutine
 
+            ; Cyclic Alphabet Index
+            INC RCX                                                 ; increment counter
+            CMP RCX, lenAlpha                                       ; compare counter < length of alphabet
+            JB .loop_matrix                                         ; if counter < alphabet length, loop
+            XOR RCX, RCX                                            ; loop index back to 0
+            JMP .loop_matrix                                        ; continue .loop_matrix subroutine
+
+.loop_matrix_wrap:
+            XOR RCX, RCX
+            JMP .loop_matrix
+
+.loop_matrix_exit:
+            XOR RAX, RAX                                            ; reset the RAX counter to 0
+            POP RSI                                                 ; restore caller's source index
+            RET                                                     ; return to caller
+
+;-------------------------------------------------------------------;
+; SECTION [bss]: Unitialized Data Reserves
+;-------------------------------------------------------------------;
 
             SECTION .bss
 key:        RESB 1                                                  ; buffer to hold the key
@@ -193,9 +237,28 @@ matrix:     RESB lenAlpha * lenAlpha                                ; create len
 
 
 
-; Indexing the Matrix
+;-------------------------------------------------------------------;
+; ; Indexing the Matrix
 ; ; rbx = row, rcx = column
 ; mov rax, rbx
 ; imul rax, lenAlpha
 ; add rax, rcx
 ; mov al, [matrix + rax]
+;-------------------------------------------------------------------;
+
+;-------------------------------------------------------------------;
+; ; Input:
+; ;   RDI = dividend (a)
+; ;   RSI = divisor  (b)
+; ; Output:
+; ;   RAX = quotient
+; ;   RDX = remainder (a % b)
+; 
+; ; mov rax, rdi    ; move dividend into RAX
+; ; xor rdx, rdx    ; clear RDX before division (must be 0 for 64-bit)
+; ; div rsi         ; divide RDX:RAX by RSI
+; 
+; ; after this:
+; ; RAX = quotient
+; ; RDX = remainder
+;-------------------------------------------------------------------;
