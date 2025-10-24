@@ -128,7 +128,7 @@ _start:
             SYSCALL                                                 ; kernel syscall
             add RSP, 16                                             ; restore stack
 
-            CALL generate_matrix
+            ; CALL generate_matrix
 
 ;-------------------------------------------------------------------;
 ; _exit:
