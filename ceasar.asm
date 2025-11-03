@@ -41,6 +41,7 @@ maxSize:    equ lenAlpha * lenAlpha                                 ; maximum si
             global _start                                           ; must be declared for linker (ld)
 
 _start:
+    mov rbp, rsp; for correct debugging
             ; Copy Offset Code into key buffer
             MOV AL, [codeLetter]                                    ; load key into temp register
             MOV [key], AL                                           ; put code into key buffer
@@ -49,6 +50,7 @@ _start:
             MOV RSI, hashWord                                       ; load hash index into source index
             MOV RDI, salt                                           ; load buffer index into destination index
             MOV ECX, lenSalt                                        ; set size of salt
+
 .copy_hash:
             MOV AL, [RSI]                                           ; load lowest source bit into temp register
             MOV [RDI], AL                                           ; store bit from temp register into destination
@@ -56,6 +58,11 @@ _start:
             INC RDI                                                 ; increment destination index pointer
             LOOP .copy_hash                                         ; loop through all of the source, decrements ECX
 
+.perform_logic:
+            CALL generate_matrix                                    ; generate matrix for encryption
+            CALL encrypt_message                                    ; encrypt the message
+
+.console_display:
             ; Display Input Header
             MOV RSI, idxHead                                        ; set source index to header message
             MOV RDX, idxHLen                                        ; set size to index length
@@ -128,7 +135,6 @@ _start:
             SYSCALL                                                 ; kernel syscall
             add RSP, 16                                             ; restore stack
 
-            ; CALL generate_matrix
 
 ;-------------------------------------------------------------------;
 ; _exit:
@@ -143,6 +149,27 @@ _exit:
             MOV RAX, SYS_EXIT                                       ; system call number (system_exit)
             XOR RDI, RDI                                            ; exit code 0
             SYSCALL                                                 ; kernel syscall
+
+;-------------------------------------------------------------------;
+; encrypt_message:
+;   Purpose:
+;       Loops through the input message and encrypts it using the Vigenère Cipher
+;       which utilizes a salt and shifted matrix to generate the cipher text.
+;   Input:
+;       None
+;   Output:
+;       RDI = encrypted message
+;       ZF = 1 if not found (RAX undefined)
+;-------------------------------------------------------------------;
+encrypt_message:
+            MOV RSI, message                                        ; set source index to message
+            MOV RDI, encrypted                                      ; set destination index to encrypted buffer
+            MOV ECX, lenMesg                                        ; set size to message length
+
+.loop_encrypt:
+            MOV DL, [RSI]                                           ; load letter at source index
+            CMP DL, DL                                              ; test for null terminator, ZF=0 means true
+;; FIXME: This function is incomplete
 
 ;-------------------------------------------------------------------;
 ; get_index_of_letter:
@@ -194,7 +221,7 @@ generate_matrix:
             MOV RDI, matrix                                         ; load matrix into destination index
             MOV AL, [key]                                           ; load offset key into temp register
             CALL get_index_of_letter                                ; initiate instruction ( [in]AL , [out]RAX )
-            MOV RCX, RAX                                            ; set index counter = RAX
+            MOV RCX, RAX                                            ; set index counter = RAX (set start to key index)
             XOR R8, R8                                              ; set destination counter = 0
             MOV R9, maxSize                                         ; load maxSize into temp register
 
@@ -206,10 +233,9 @@ generate_matrix:
             JZ .loop_matrix_wrap                                    ; jump if zero (ZF=0) to .loop_matrix_feed subroutine
             MOV [RDI + R8], DL                                      ; set matrix[i] to temp char
             INC R8                                                  ; Incremental loop counter
-            JMP .loop_matrix                                        ; continue .loop_matrix subroutine
 
-            ; Cyclic Alphabet Index
-            INC RCX                                                 ; increment counter
+            ; Cycle Alphabet Index
+            INC RCX                                                 ; increment counter (modulo index)
             CMP RCX, lenAlpha                                       ; compare counter < length of alphabet
             JB .loop_matrix                                         ; if counter < alphabet length, loop
             XOR RCX, RCX                                            ; loop index back to 0
@@ -232,33 +258,3 @@ generate_matrix:
 key:        RESB 1                                                  ; buffer to hold the key
 salt:       RESB 32                                                 ; buffer to hold the salt
 matrix:     RESB lenAlpha * lenAlpha                                ; create len x len size array [26 x 26 = 676]
-
-
-
-
-
-;-------------------------------------------------------------------;
-; ; Indexing the Matrix
-; ; rbx = row, rcx = column
-; mov rax, rbx
-; imul rax, lenAlpha
-; add rax, rcx
-; mov al, [matrix + rax]
-;-------------------------------------------------------------------;
-
-;-------------------------------------------------------------------;
-; ; Input:
-; ;   RDI = dividend (a)
-; ;   RSI = divisor  (b)
-; ; Output:
-; ;   RAX = quotient
-; ;   RDX = remainder (a % b)
-; 
-; ; mov rax, rdi    ; move dividend into RAX
-; ; xor rdx, rdx    ; clear RDX before division (must be 0 for 64-bit)
-; ; div rsi         ; divide RDX:RAX by RSI
-; 
-; ; after this:
-; ; RAX = quotient
-; ; RDX = remainder
-;-------------------------------------------------------------------;
