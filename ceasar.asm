@@ -135,7 +135,6 @@ _start:
             SYSCALL                                                 ; kernel syscall
             add RSP, 16                                             ; restore stack
 
-
 ;-------------------------------------------------------------------;
 ; _exit:
 ;   Purpose:
@@ -151,6 +150,28 @@ _exit:
             SYSCALL                                                 ; kernel syscall
 
 ;-------------------------------------------------------------------;
+; clear_buffer:
+;   Purpose:
+;       Clears a buffer by setting all bytes to 0
+;   Input:
+;       RDI = buffer to clear
+;       ECX = size of buffer in bytes
+;   Output:
+;       None
+;   Note:
+;       The size of the buffer must be a multiple of 8 bits for this
+;-------------------------------------------------------------------;
+clear_buffer:
+            XOR RAX, RAX                                            ; clear RAX
+            MOV AL, 0                                               ; load 0 into AL
+
+.clear_loop:
+            MOV [RDI], AL                                           ; set byte at source index to 0
+            INC RDI                                                 ; increment source index
+            LOOP .clear_loop                                        ; loop until ECX is zero
+            RET
+
+;-------------------------------------------------------------------;
 ; encrypt_message:
 ;   Purpose:
 ;       Loops through the input message and encrypts it using the Vigenère Cipher
@@ -162,14 +183,25 @@ _exit:
 ;       ZF = 1 if not found (RAX undefined)
 ;-------------------------------------------------------------------;
 encrypt_message:
+            PUSH RSI                                                ; save caller's source index
             MOV RSI, message                                        ; set source index to message
-            MOV RDI, encrypted                                      ; set destination index to encrypted buffer
             MOV ECX, lenMesg                                        ; set size to message length
+            MOV RDI, output                                         ; set destination index to encrypted buffer
+            CALL clear_buffer                                       ; clear encrypted buffer, args: {RDI, ECX}
+            XOR R8, R8                                              ; set first index counter = 0
+            XOR R9, R9                                              ; set second index counter = 0
 
 .loop_encrypt:
             MOV DL, [RSI]                                           ; load letter at source index
             CMP DL, DL                                              ; test for null terminator, ZF=0 means true
-;; FIXME: This function is incomplete
+            JZ .return_complete_encrypt                             ; jump if zero (ZF=0) to .loop_encrypt subroutine
+            INC RCX                                                 ; increment index counter
+            JMP .loop_encrypt                                       ; loop through input message
+
+.return_complete_encrypt:
+            XOR RAX, RAX                                            ; clear RAX
+            POP RSI                                                 ; restore caller's source index
+            RET
 
 ;-------------------------------------------------------------------;
 ; get_index_of_letter:
@@ -189,18 +221,18 @@ get_index_of_letter:
 .loop_alphabet:
             MOV DL, [RSI + RCX]                                     ; load letter at counter location
             TEST DL, DL                                             ; test for null terminator, ZF=0 means true
-            JZ .no_letter_found                                     ; jump if zero (ZF=0) to .not_found subroutine
+            JZ .loop_alphabet_no_letter_found                       ; jump if zero (ZF=0) to .not_found subroutine
             CMP DL, AL                                              ; compare input value with index value, ZF=0 means true
-            JE .letter_found                                        ; jump if equal (ZF=0) to .found subroutine
+            JE .loop_alphabet_letter_found                          ; jump if equal (ZF=0) to .found subroutine
             INC RCX                                                 ; increment index counter
             JMP .loop_alphabet                                      ; continue .loop_find subroutine
 
-.letter_found:
+.loop_alphabet_letter_found:
             MOV RAX, RCX                                            ; return index to RAX
             POP RSI                                                 ; restore caller's source index
             RET                                                     ; return to caller
 
-.no_letter_found:
+.loop_alphabet_no_letter_found:
             XOR RAX, RAX                                            ; clear RAX
             POP RSI                                                 ; restore caller's source index
             RET                                                     ; return to caller
@@ -258,3 +290,4 @@ generate_matrix:
 key:        RESB 1                                                  ; buffer to hold the key
 salt:       RESB 32                                                 ; buffer to hold the salt
 matrix:     RESB lenAlpha * lenAlpha                                ; create len x len size array [26 x 26 = 676]
+output:     RESB lenMesg                                            ; buffer to hold translated output
