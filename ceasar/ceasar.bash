@@ -4,7 +4,6 @@
   enhanced with the additions of Vigenère modifications.
 '
 
-declare -A matrix
 CODE='H'
 SALT="BABBAGE"
 MESG="HAPPY BIRTHDAY"
@@ -25,9 +24,9 @@ get_encrypted() {
     Prints the encrypted string to stdout.
 
   Behavior:
-    - Iterates over each character in msg.
+    - Converts msg to uppercase, then iterates over each character.
     - If the character is a space, it is copied to the output unchanged.
-    - If the character is alphanumeric:
+    - If the character is a letter (A-Z):
         1. Selects the corresponding salt character based on the current key index.
         2. Finds the row index in the matrix using the salt character.
         3. Finds the column index using the plaintext character.
@@ -35,7 +34,7 @@ get_encrypted() {
     - Any other character is appended unchanged.
     - Key index cycles through the length of the salt.
 '
-  local msg="$1"
+  local msg="${1^^}"
   shift
   local -a matrix=("$@")
   local key_index=0
@@ -48,7 +47,7 @@ get_encrypted() {
       [[:space:]])
         response+=" "
         ;;
-      [[:alnum:]])
+      [A-Z])
         local idx="${SALT:key_index:1}"
         local fidx=$(get_index_of_letter "$idx")
         local sidx=$(get_index_of_letter "$ch")
@@ -74,7 +73,7 @@ get_decrypted() {
   Decrypts a message that was encrypted using a Caesar/Vigenère-style matrix and a SALT string.
 
   Parameters:
-    encrypted - The encrypted string to decrypt. Spaces and non-alphanumeric characters are preserved.
+    encrypted - The encrypted string to decrypt. Spaces and non-letter characters are preserved.
     matrix    - Array representing the 26x26 cipher matrix, used to reverse the encryption.
 
   Returns:
@@ -84,12 +83,12 @@ get_decrypted() {
     1. Convert the input message to uppercase.
     2. Iterate over each character in the message:
        a. If the character is a space, append it unchanged.
-       b. If the character is alphanumeric:
+       b. If the character is a letter (A-Z):
           i. Determine the current SALT character based on key_index.
           ii. Find the row in the matrix corresponding to the SALT character.
           iii. Search the row for the encrypted character.
           iv. Append the corresponding letter from the standard alphabet to the output.
-       c. Non-alphanumeric characters are appended unchanged.
+       c. Non-letter characters (including digits) are appended unchanged.
     3. Cycle key_index through the length of SALT to align with the encryption key.
 '
   local msg="${1^^}"
@@ -107,7 +106,7 @@ get_decrypted() {
       [[:space:]])
         response+=" "
         ;;
-      [[:alnum:]])
+      [A-Z])
         local key_letter="${SALT:key_index:1}"
         local fidx=$(get_index_of_letter "$key_letter")
         local row="${matrix[$fidx]}"
@@ -182,31 +181,6 @@ get_index_of_letter () {
   echo "$index"
 }
 
-get_index_of_salt() {
-: '
-  get_index_of_salt(letter)
-
-  Finds the index of a letter within the SALT string.
-
-  Parameters:
-    letter - Single character string to locate.
-
-  Returns:
-    Prints the zero-based index of the letter in SALT.
-'
-  local letter="$1"
-  local letters="$SALT"
-  local index=-1
-
-  for (( i = 0; i < ${#letters}; i++ )); do
-    if [[ ${letters:$i:1} == "$letter" ]]; then
-      index=$i
-    fi
-  done
-
-  echo "$index"
-}
-
 generate_matrix () {
 : '
   generate_matrix(start_letter)
@@ -263,7 +237,45 @@ display_matrix() {
   done
 }
 
+load_config() {
+: '
+  load_config(path)
+
+  Loads the code, mask, and msg settings from the shared ceasar.ini file.
+
+  Parameters:
+    path - The path to the ini file.
+
+  Returns:
+    Nothing. Sets the CODE, SALT, and MESG globals. Any setting missing from
+    the file (or a missing file) keeps its default value.
+
+  Behavior:
+    - Skips blank lines, comments (; or #), and [section] headers.
+    - Splits each remaining line at the first "=" and trims both sides.
+'
+  local path="$1"
+  local line key value
+  [[ -r "$path" ]] || return 0
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" || "$line" == [\;\#\[]* || "$line" != *=* ]] && continue
+    key="${line%%=*}"; key="${key%"${key##*[![:space:]]}"}"
+    value="${line#*=}"; value="${value#"${value%%[![:space:]]*}"}"
+    case "$key" in
+      code) CODE="$value" ;;
+      mask) SALT="${value^^}" ;;
+      msg)  MESG="$value" ;;
+    esac
+  done < "$path"
+}
+
 declare -a MATRIX
+# The ini lives beside this script
+load_config "$(dirname "${BASH_SOURCE[0]}")/ceasar.ini"
 if [[ $# -gt 0 ]]; then
   printf "Not Today Satan\n"
   # Convert input code to integer
@@ -271,12 +283,13 @@ if [[ $# -gt 0 ]]; then
   letters="$(get_letters $letter_index)"
   printf "Letters: %s\n" $letters
 
-  mapfile -t MATRIX < <(generate_matrix "H")
+  mapfile -t MATRIX < <(generate_matrix "${1^^}")
   display_matrix "${MATRIX[@]}"
 else
   mapfile -t MATRIX < <(generate_matrix "${CODE^^}")
   encrypted="$(get_encrypted "$MESG" "${MATRIX[@]}")"
   decrypted="$(get_decrypted "${encrypted^^}" "${MATRIX[@]}")"
+  [[ "$decrypted" == "${MESG^^}" ]] || { printf "Round trip failed: %s\n" "$decrypted" >&2; exit 1; }
   # display_matrix "${MATRIX[@]}"
   printf "Input:     %s\n" "$MESG"
   printf "Encrypted: %s\n" "$encrypted"

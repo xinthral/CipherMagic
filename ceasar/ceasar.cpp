@@ -7,6 +7,9 @@
 #include <cstring>
 #include <cctype>
 #include <string>
+#include <filesystem>
+#include <fstream>
+#include <map>
 
 // #define NDEBUG
 #include <cassert>
@@ -41,6 +44,20 @@ public:
   };
 
   /**!
+   * @brief Destructor for the CeasarCipher class.
+   *
+   * Frees each row of the matrix, then the matrix itself.
+   */
+  ~CeasarCipher() {
+    for (int i = 0; i < length; i++) { delete[] matrix[i]; }
+    delete[] matrix;
+  }
+
+  // The matrix is owned by this object, so copying it would free it twice
+  CeasarCipher(const CeasarCipher&) = delete;
+  CeasarCipher& operator=(const CeasarCipher&) = delete;
+
+  /**!
    * @brief Decrypts a message that was encrypted using the Caesar/Vigenère-style matrix.
    *
    * The decode function takes an encrypted string and reverses the encryption using the
@@ -60,21 +77,17 @@ public:
   char * decode(const char * input) {
     int keyIdx = 0;
     int inputLength = std::strlen(input);
-    char * temp = new char[inputLength + 1];
+    int maskLength = std::strlen(mask);
     char * output = new char[inputLength + 1];
-    int outputIdx = 0;
     for (int i = 0; i < inputLength; i++) {
-      if (std::isalpha(input[i])) {
-        temp = matrix[getIndex(mask[keyIdx])];
-        for (int j = 0; j < std::strlen(temp); j++) {
-          if (temp[j] == input[i]) {
-            output[outputIdx] = letters[j];
-            outputIdx = (outputIdx + 1) % inputLength;
-            break;
-          }
-        }
-      } else { output[outputIdx++] = input[i]; }
-      keyIdx = (keyIdx + 1) % std::strlen(mask);
+      // Non-letters, and anything not found in the row, are copied through
+      output[i] = input[i];
+      if (isLetter(input[i])) {
+        const char * row = matrix[getIndex(mask[keyIdx])];
+        const char * pos = std::strchr(row, input[i]);
+        if (pos) { output[i] = letters[pos - row]; }
+      }
+      keyIdx = (keyIdx + 1) % maskLength;
     }
     output[inputLength] = '\0';
     return output;
@@ -104,12 +117,13 @@ public:
     int maskLength = std::strlen(mask);
     char * output = new char[inputLength + 1];
     for (int i = 0; i < inputLength; i++) {
-      if (std::isalpha(input[i])) {
+      char ch = std::toupper(static_cast<unsigned char>(input[i]));
+      if (isLetter(ch)) {
         firstIdx = getIndex(mask[keyIdx]);
-        secondIdx = getIndex(input[i]);
+        secondIdx = getIndex(ch);
         output[i] = matrix[firstIdx][secondIdx];
       } else {
-        output[i] = ' ';
+        output[i] = ch;
       }
       keyIdx = (keyIdx + 1) % maskLength;
     }
@@ -149,6 +163,18 @@ public:
   }
 
   /**!
+   * @brief Checks whether a character is a letter in the lexicon (A-Z).
+   *
+   * Unlike std::isalpha, this rejects lowercase letters, which getIndex cannot find.
+   *
+   * @param ch The character to check.
+   * @return True if the character is between 'A' and 'Z'.
+   */
+  bool isLetter(const char ch) {
+    return ch >= 'A' && ch <= 'Z';
+  }
+
+  /**!
    * @brief Gets the index of a given character in the lexicon.
    *
    * This function searches for the given character in the lexicon (alphabet) and
@@ -162,7 +188,7 @@ public:
   int getIndex(const char code) {
     const char* pos = std::strchr(letters, code);
     if (!pos) {
-      printf("%s: %c - Not found.\n", pos, code);
+      printf("%c - Not found.\n", code);
       return -1;
     }
     return int(pos - letters);
@@ -215,20 +241,59 @@ public:
   }
 };
 
+/**!
+ * @brief Loads the code, mask, and msg settings from the shared ceasar.ini file.
+ *
+ * Reads simple key = value lines, skipping blank lines, comments (; or #), and
+ * [section] headers. Any setting missing from the file keeps its default value.
+ *
+ * @param path The path to the ini file.
+ * @return A map of setting names to values.
+ */
+std::map<std::string, std::string> loadConfig(const std::filesystem::path& path) {
+  std::map<std::string, std::string> config = {
+    {"code", "H"}, {"mask", "BABBAGE"}, {"msg", "HAPPY BIRTHDAY"}
+  };
+  auto trim = [](const std::string& s) {
+    size_t first = s.find_first_not_of(" \t\r\n");
+    size_t last = s.find_last_not_of(" \t\r\n");
+    return (first == std::string::npos) ? std::string() : s.substr(first, last - first + 1);
+  };
+  std::ifstream file(path);
+  std::string line;
+  while (std::getline(file, line)) {
+    line = trim(line);
+    if (line.empty() || line[0] == ';' || line[0] == '#' || line[0] == '[') { continue; }
+    size_t eq = line.find('=');
+    if (eq == std::string::npos) { continue; }
+    std::string key = trim(line.substr(0, eq));
+    if (config.count(key)) { config[key] = trim(line.substr(eq + 1)); }
+  }
+  return config;
+}
+
 int main(int argc, char **argv) {
-  const char code = 'H';
-  const char* mask = "BABBAGE";
-  const char* mesg = "HAPPY BIRTHDAY";
-  const char* expected = "PHXXF MQYBPKNJ";
+  // The ini lives beside this source file
+  auto config = loadConfig(std::filesystem::path(__FILE__).parent_path() / "ceasar.ini");
+  const char code = std::toupper(config["code"][0]);
+  std::string maskUpper = config["mask"];
+  std::transform(maskUpper.begin(), maskUpper.end(), maskUpper.begin(), ::toupper);
+  std::string mesgUpper = config["msg"];
+  std::transform(mesgUpper.begin(), mesgUpper.end(), mesgUpper.begin(), ::toupper);
+  const char* mask = maskUpper.c_str();
+  const char* mesg = config["msg"].c_str();
   const char* response1;
   const char* response2;
-  CeasarCipher c = CeasarCipher(code, mask);
-  response1 = c.encode(mesg);
-  assert(std::strcmp(expected, response1) == 0);
+  CeasarCipher c(code, mask);
+  response1 = c.encode(mesgUpper.c_str());
   response2 = c.decode(response1);
-  assert(std::strcmp(mesg, response2) == 0);
+  assertm(std::strcmp(mesgUpper.c_str(), response2) == 0, "Round trip failed");
 
   // c.printMatrix();
   printf("Input:     %s\n", mesg);
   printf("Encrypted: %s\nDecrypted: %s\n", response1, response2);
+
+  // encode and decode return new[] buffers owned by the caller
+  delete[] response1;
+  delete[] response2;
 }

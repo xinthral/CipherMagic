@@ -69,8 +69,12 @@ help:
 	@echo "    bashCeasar - Builds the bash version of the Cipher            "
 	@echo "    cppCeasar  - Builds the cpp version of the Cipher             "
 	@echo "    javaCeasar - Builds the java version of the Cipher            "
+	@echo "    jsCeasar   - Builds the js version of the Cipher              "
 	@echo "    luaCeasar  - Builds the lua version of the Cipher             "
+	@echo "    perlCeasar - Builds the perl version of the Cipher            "
+	@echo "    phpCeasar  - Builds the php version of the Cipher             "
 	@echo "    pyCeasar   - Builds the py version of the Cipher              "
+	@echo "    rCeasar    - Builds the R version of the Cipher               "
 	@echo "    rustCeasar - Builds the rust version of the Cipher            "
 	@echo "    cppEnigma  - Builds the cpp version of the Enigma machine     "
 	@echo "    clean      - Clean up build files                             "
@@ -81,8 +85,12 @@ all:
 	$(MAKE) bashCeasar
 	$(MAKE) cppCeasar
 	$(MAKE) javaCeasar
+	$(MAKE) jsCeasar
 	$(MAKE) luaCeasar
+	$(MAKE) perlCeasar
+	$(MAKE) phpCeasar
 	$(MAKE) pyCeasar
+	$(MAKE) rCeasar
 	$(MAKE) rustCeasar
 
 cppCeasar: ceasar/ceasar.o
@@ -92,8 +100,20 @@ cppCeasar: ceasar/ceasar.o
 javaCeasar: ceasar/Ceasar.class
 	java -cp ceasar Ceasar
 
+jsCeasar:
+	node ceasar/ceasar.js
+
+perlCeasar:
+	perl ceasar/ceasar.pl
+
+phpCeasar:
+	php ceasar/ceasar.php
+
 pyCeasar:
 	python3 ceasar/ceasar.py
+
+rCeasar:
+	Rscript ceasar/ceasar.R
 
 rustCeasar:
 	rustc -o $@.exe ceasar/ceasar.rs
@@ -140,4 +160,4 @@ cleanobjs:
 cleanbin:
 	$(RM) *.exe
 
-.PHONY: all clean cleanbin cleanobjs asmCeasar cppCeasar cppEnigma javaCeasar pyCeasar rustCeasar luaCeasar bashCeasar help
+.PHONY: all clean cleanbin cleanobjs asmCeasar cppCeasar cppEnigma javaCeasar jsCeasar perlCeasar phpCeasar pyCeasar rCeasar rustCeasar luaCeasar bashCeasar help

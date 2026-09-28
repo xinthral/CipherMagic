@@ -2,6 +2,8 @@
   The Ceasar Cipher is a simple rotational cryptographic algorithm.
   However, it is enhanced with the additions of Vigenère modifications.
 '''
+import configparser
+import os
 
 class CeasarCipher:
   def __init__(self, shift: str, mask: str) -> None:
@@ -49,7 +51,7 @@ class CeasarCipher:
     response: str = ''
     key_idx: int = 0
     for character in text.upper():
-      if character.isalpha():
+      if self.isLetter(character):
         fidx: int = self.getIndex(self.mask[key_idx])
         sidx: int = self.getIndex(character)
         response += self.matrix[fidx][sidx]
@@ -80,13 +82,16 @@ class CeasarCipher:
     key_idx: int = 0
     temp: list[str] = []
     for character in text.upper():
-      if character.isalpha():
+      if self.isLetter(character):
         temp = self.matrix[self.getIndex(self.mask[key_idx])]
         for j in range(len(temp)):
           if temp[j] == character:
             response += self.letters[j]
+            break
+        else:
+          response += character  # not found in the row, copied through
       else:
-        response += ' '
+        response += character
       key_idx = (key_idx + 1) % len(self.mask)
     return response
 
@@ -128,6 +133,21 @@ class CeasarCipher:
     """
     return self.letters.index(letter.upper())
 
+  def isLetter(self, character: str) -> bool:
+    """
+    Checks whether a character is a letter in the lexicon (A-Z).
+
+    Parameters:
+    - character (str): The character to check.
+
+    Returns:
+    - bool: True if the character is between 'A' and 'Z'.
+
+    Unlike str.isalpha(), this rejects accented letters (such as 'É') that are not
+    in the 'letters' attribute and would make getIndex fail.
+    """
+    return 'A' <= character <= 'Z'
+
   def printMatrix(self) -> None:
     """
     Prints the generated matrix in a formatted manner.
@@ -155,13 +175,31 @@ class CeasarCipher:
       print(' |')
       i += 1
 
+def load_config(path: str) -> dict[str, str]:
+  """
+  Loads the code, mask, and msg settings from the shared ceasar.ini file.
+
+  Parameters:
+  - path (str): The path to the ini file.
+
+  Returns:
+  - dict[str, str]: The settings, falling back to the defaults for any missing value.
+  """
+  config: dict[str, str] = {'code': 'H', 'mask': 'BABBAGE', 'msg': 'HAPPY BIRTHDAY'}
+  parser = configparser.ConfigParser(interpolation=None)
+  if parser.read(path, encoding='utf-8') and parser.has_section('ceasar'):
+    config.update({key: parser.get('ceasar', key) for key in config if parser.has_option('ceasar', key)})
+  return config
+
 if __name__ == "__main__":
-  code: str = 'H'
-  mask: str = 'BABBAGE'
-  mesg: str = 'HAPPY BIRTHDAY'
+  config: dict[str, str] = load_config(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ceasar.ini'))
+  code: str = config['code']
+  mask: str = config['mask']
+  mesg: str = config['msg']
   c = CeasarCipher(code, mask)
   # c.printMatrix()
   print(f"Input:     {mesg}")
   encrypted: str = c.encrypt(mesg)
   decrypted: str = c.decrypt(encrypted)
+  assert decrypted == mesg.upper(), f"Round trip failed: {decrypted}"
   print(f"Encrypted: {encrypted}\nDecrypted: {decrypted}")
