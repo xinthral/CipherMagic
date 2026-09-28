@@ -82,8 +82,8 @@ all:
 	$(MAKE) cppCeasar
 	$(MAKE) javaCeasar
 	$(MAKE) luaCeasar
-	$(MAKE) rustCeasar
 	$(MAKE) pyCeasar
+	$(MAKE) rustCeasar
 
 cppCeasar: ceasar/ceasar.o
 	$(PP) $(CFLAGS) $^ -o $@.exe
