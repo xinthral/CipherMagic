@@ -1,0 +1,9 @@
+# Python
+__pycache__
+
+# CPP
+*.o
+*.d
+
+# Binaries
+*.exe
