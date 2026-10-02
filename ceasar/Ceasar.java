@@ -1,10 +1,16 @@
 /**!
- * Ceasar Cipher manipulation
- * Purpose: Generate a cipher based on a key utilizing shifting techniques
- * @Author: Xinthral
- * Date: 9/18/18
- */
+  The Ceasar Cipher is a simple rotational cryptographic algorithm. 
+  However, it is enhanced with the additions of Vigenère modifications.
+  Originated: 9/18/18
+*/
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Properties;
 
 public class Ceasar {
   // CLASS SCOPE VARIABLES
@@ -29,6 +35,16 @@ public class Ceasar {
       }
     }
     return indexNumber;
+  }
+  private boolean isLetter(char character){
+    /**!
+     * Checks whether a character is a letter in the alphabet (A-Z)
+     * @param character: The character you wish to check.
+     * @return True if the character is between 'A' and 'Z'. Anything else
+     *         (spaces, digits, punctuation) is copied through unchanged, since
+     *         getIndex would otherwise treat it as 'A'.
+     */
+    return character >= 'A' && character <= 'Z';
   }
   private void generateCipherMatrix(char code){
     /**!
@@ -59,12 +75,12 @@ public class Ceasar {
 
     int keyIndex = 0;
     for(int i = 0; i < inputArray.length; i++) {
-      if (inputArray[i] != ' ') {
+      if (isLetter(inputArray[i])) {
         int firstIndex = getIndex(keyArray[keyIndex]);
         int secondIndex = getIndex(inputArray[i]);
         outputString += outputMatrix[firstIndex][secondIndex];
         shadowMatrix[firstIndex][secondIndex] = inputArray[i];
-      } else { outputString += " "; }
+      } else { outputString += inputArray[i]; }
       keyIndex = (keyIndex + 1) % keyArray.length;
     }
     return outputString;
@@ -81,14 +97,14 @@ public class Ceasar {
 
     int keyIndex = 0;
     for(int i = 0; i < inputArray.length; i++) {
-      if (inputArray[i] != ' ') {
+      if (isLetter(inputArray[i])) {
         char[] temp = outputMatrix[getIndex(keyArray[keyIndex])];
         for (int j = 0; j < temp.length; j++) {
           if (temp[j] == inputArray[i]) {
             outputString += letters[j];
           }
         }
-      } else { outputString += " "; }
+      } else { outputString += inputArray[i]; }
       keyIndex = (keyIndex + 1) % keyArray.length;
     }
     return outputString;
@@ -139,17 +155,43 @@ public class Ceasar {
     generateCipherMatrix(code);
   }
 
+  public static Properties loadConfig() {
+    /**!
+     * Loads the code, mask, and msg settings from the shared ceasar.ini file,
+     * which lives beside Ceasar.class. Any setting missing from the file keeps
+     * its default value.
+     * @return Properties holding code, mask, and msg.
+     */
+    Properties defaults = new Properties();
+    defaults.setProperty("code", "H");
+    defaults.setProperty("mask", "BABBAGE");
+    defaults.setProperty("msg", "HAPPY BIRTHDAY");
+    Properties config = new Properties(defaults);
+    try {
+      Path dir = Paths.get(Ceasar.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+      try (Reader reader = new InputStreamReader(Files.newInputStream(dir.resolve("ceasar.ini")), StandardCharsets.UTF_8)) {
+        config.load(reader);
+      }
+    } catch (Exception e) {
+      // No readable ini; the defaults are used
+    }
+    return config;
+  }
+
   public static void main(String[] args) {
-    char code = 'H';
-    String key = "BABBAGE";
-    String msg = "HAPPY BIRTHDAY";
+    Properties config = loadConfig();
+    char code = config.getProperty("code").trim().toUpperCase().charAt(0);
+    String key = config.getProperty("mask").trim().toUpperCase();
+    String msg = config.getProperty("msg").trim();
     // boolean hidden = false;
     Ceasar self = new Ceasar(code, key);
-    
-    String response1 = self.encode(msg);
-    assert "PHXXF MQYBPKNJ".equals(response1);
+
+    String response1 = self.encode(msg.toUpperCase());
     String response2 = self.decode(response1);
-    assert "HAPPY BIRTHDAY".equals(response2);
+    // Checked explicitly, since assert is skipped unless java runs with -ea
+    if (!msg.toUpperCase().equals(response2)) {
+      throw new IllegalStateException("Round trip failed: " + response2);
+    }
 
     // Optional Method for viewing the cipher matrix based on last item decoded
     // self.displayMatrix(false);

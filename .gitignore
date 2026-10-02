@@ -1,0 +1,13 @@
+# Binaries
+*.exe
+
+# CPP
+*.obj
+*.o
+*.d
+
+# Java
+*.class
+
+# Python
+__pycache__

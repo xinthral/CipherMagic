@@ -7,17 +7,24 @@
 
 # Compiler: gcc for C programs, g++ for C++ programs
 # emcc for embedded C programs, em++ for embedded C++ programs
-CC := g++
+CC := gcc
+PP := g++
 DOXYGEN := doxygen
 RRM := rm -rf
 SEPR := /
+NASM := nasm
 
 # Windows Variants
 ifeq ($(OS), Windows_NT)
-CC := c++
+# Chocolatey mingw package install location (override with: make MINGW_BIN=...)
+MINGW_BIN ?= C:/ProgramData/mingw64/mingw64/bin
+CC := $(MINGW_BIN)/gcc.exe
+PP := $(MINGW_BIN)/g++.exe
 DOXYGEN := doxygen.exe
 RM := del
 RRM := del /S /Q /f
+# Chocolatey nasm package install location
+NASM := "C:/Program Files/NASM/nasm.exe"
 SEPR := \\
 
 endif
@@ -58,34 +65,81 @@ help:
 	@echo "##################################################################"
 	@echo "  Build Information for the Ciphers                               "
 	@echo "  Usage: make \<str:option\>                                      "
-	@echo "    cppCeasar  - Builds the cpp version of the Ceasar Cipher      "
-	@echo "    javaCeasar - Builds the java version of the Ceasar Cipher     "
-	@echo "    pyCeasar   - Builds the py version of the Ceasar Cipher       "
+	@echo "    asmCeasar  - Builds the assembly version of the Cipher        "
+	@echo "    bashCeasar - Builds the bash version of the Cipher            "
+	@echo "    cppCeasar  - Builds the cpp version of the Cipher             "
+	@echo "    javaCeasar - Builds the java version of the Cipher            "
+	@echo "    jsCeasar   - Builds the js version of the Cipher              "
+	@echo "    luaCeasar  - Builds the lua version of the Cipher             "
+	@echo "    perlCeasar - Builds the perl version of the Cipher            "
+	@echo "    phpCeasar  - Builds the php version of the Cipher             "
+	@echo "    pyCeasar   - Builds the py version of the Cipher              "
+	@echo "    rCeasar    - Builds the R version of the Cipher               "
+	@echo "    rustCeasar - Builds the rust version of the Cipher            "
+	@echo "    cppEnigma  - Builds the cpp version of the Enigma machine     "
 	@echo "    clean      - Clean up build files                             "
 	@echo "##################################################################"
 
-all: cppCeasar javaCeasar pyCeasar rustCeasar luaCeasar
+all: 
+	$(MAKE) asmCeasar
+	$(MAKE) bashCeasar
+	$(MAKE) cppCeasar
+	$(MAKE) javaCeasar
+	$(MAKE) jsCeasar
+	$(MAKE) luaCeasar
+	$(MAKE) perlCeasar
+	$(MAKE) phpCeasar
+	$(MAKE) pyCeasar
+	$(MAKE) rCeasar
+	$(MAKE) rustCeasar
 
-cppCeasar: ceasar.o
-	$(CC) $(CFLAGS) $^ -o $@.exe
+cppCeasar: ceasar/ceasar.o
+	$(PP) $(CFLAGS) $^ -o $@.exe
 	./$@.exe
 
-javaCeasar: Ceasar.class
-	java Ceasar
+javaCeasar: ceasar/Ceasar.class
+	java -cp ceasar Ceasar
+
+jsCeasar:
+	node ceasar/ceasar.js
+
+perlCeasar:
+	perl ceasar/ceasar.pl
+
+phpCeasar:
+	php ceasar/ceasar.php
 
 pyCeasar:
-	python3 ceasar.py
+	python3 ceasar/ceasar.py
+
+rCeasar:
+	Rscript ceasar/ceasar.R
 
 rustCeasar:
-	rustc -o ceasar.exe ceasar.rs
-	./ceasar.exe
+	rustc -o $@.exe ceasar/ceasar.rs
+	./$@.exe
 
 luaCeasar:
-	lua ceasar.lua
+	lua ceasar/ceasar.lua
+
+bashCeasar:
+	bash ceasar/ceasar.bash
+
+cppEnigma: enigma/enigma.o
+	$(PP) $(CFLAGS) $^ -o $@.exe
+	./$@.exe
+
+asmCeasar: ceasar/ceasar.obj
+	/usr/bin/ld -g -o $@.exe $^
+	./$@.exe
+
+# Link up Assembly Objects
+%.obj: %.asm
+	$(NASM) -f elf64 -g -F dwarf -o $@ $<
 
 # Dynamically Compile any object files from requested cpp files
-%.o: %.cpp %.h
-	$(CC) $(CXXFLAGS) -o $@ -c $^
+%.o: %.cpp
+	$(PP) $(CXXFLAGS) -o $@ -c $<
 
 %.class: %.java
 	javac $<
@@ -97,12 +151,13 @@ clean:
 
 # Clean up audiosuite and graph data
 cleanobjs:
-	$(RRM) *.o
-	$(RRM) *.class
+	$(RRM) *.o ceasar$(SEPR)*.o enigma$(SEPR)*.o
+	$(RRM) *.obj ceasar$(SEPR)*.obj
+	$(RRM) *.class ceasar$(SEPR)*.class
 	$(RRM) *.pdb
 
 # Clean up binary files
 cleanbin:
 	$(RM) *.exe
 
-.PHONY: all cpp clean cleanbin cleanobjs cppCeasar javaCeasar pyCeasar
+.PHONY: all clean cleanbin cleanobjs asmCeasar cppCeasar cppEnigma javaCeasar jsCeasar perlCeasar phpCeasar pyCeasar rCeasar rustCeasar luaCeasar bashCeasar help
